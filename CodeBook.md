@@ -1,11 +1,13 @@
-File with R code "run_analysis.R" perform major steps
-Extracts the measurements on the mean and standard deviation for each measurement
-Use descriptive activity names to name the activities in the data set
-Appropriately label the data set with descriptive variable names
-Creating a second, independent tidy data set with the average of each variable for each activity and each subject
+File with R code "run_analysis.R" perform major steps Extracts the measurements on the mean and standard deviation 
 
-About variables:
 
-x_train, y_train, x_test, y_test, subject_train and subject_test contain the data from the downloaded files.
-x_data, y_data and subject_data merge the previous datasets to further analysis.
-features contains the correct names for the x_data dataset, which are applied to the column names stored in
+This code book summarizes the resulting data fields in tidy.txt.
+
+1)I have read the data set in activity labels and features
+2) I have taken out the data on mean and standard deviation
+3) I hav eread the training and test data
+4) I have merged all the data read in previous steps in a single table
+5) Next I have melted data in reshape package
+6) taken the mean
+7) Added in a table and stored in the the file
+
