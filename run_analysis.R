@@ -1,56 +1,37 @@
-# File reading:
-x_train <- read.table("./Data/Course3/UCI HAR Dataset/train/X_train.txt")
-y_train <- read.table("./Data/Course3/UCI HAR Dataset/train/y_train.txt")
-subject_train <- read.table("./Data/Course3/UCI HAR Dataset/train/subject_train.txt")
+# Load activity labels + features
+activityLabels <- read.table("./Data/Course3/UCI HAR Dataset/activity_labels.txt")
+activityLabels[,2] <- as.character(activityLabels[,2])
+features <- read.table("./Data/Course3/UCI HAR Dataset/features.txt")
+features[,2] <- as.character(features[,2])
 
-# Reading testing tables:
-x_test <- read.table("./Data/Course3/UCI HAR Dataset/test/X_test.txt")
-y_test <- read.table("./Data/Course3/UCI HAR Dataset/test/y_test.txt")
-subject_test <- read.table("./Data/Course3/UCI HAR Dataset/test/subject_test.txt")
-
-# Reading feature vector:
-features <- read.table('./Data/Course3/UCI HAR Dataset/features.txt')
-
-# Reading activity labels:
-activityLabels = read.table('./Data/Course3/UCI HAR Dataset/activity_labels.txt')
-
-#columns
-colnames(x_train) <- features[,2] 
-colnames(y_train) <-"activityId"
-colnames(subject_train) <- "subjectId"
-      
-colnames(x_test) <- features[,2] 
-colnames(y_test) <- "activityId"
-colnames(subject_test) <- "subjectId"
-      
-colnames(activityLabels) <- c('activityId','activityType')
-
-#Data merge
-mrg_train <- cbind(y_train, subject_train, x_train)
-mrg_test <- cbind(y_test, subject_test, x_test)
-setAllInOne <- rbind(mrg_train, mrg_test)
-
-#Reading column names
-colNames <- colnames(setAllInOne)
-
-#Vector
-mean_and_std <- (grepl("activityId" , colNames) | 
-                 grepl("subjectId" , colNames) | 
-                 grepl("mean.." , colNames) | 
-                 grepl("std.." , colNames) 
-                 )
-
-#Subset
-setForMeanAndStd <- setAllInOne[ , mean_and_std == TRUE]
-
-setWithActivityNames <- merge(setForMeanAndStd, activityLabels,
-                              by='activityId',
-                              all.x=TRUE)
-
-#New Tidy data set
-secTidySet <- aggregate(. ~subjectId + activityId, setWithActivityNames, mean)
-secTidySet <- secTidySet[order(secTidySet$subjectId, secTidySet$activityId),]
+# Extract only the data on mean and standard deviation
+featuresWanted <- grep(".*mean.*|.*std.*", features[,2])
+featuresWanted.names <- features[featuresWanted,2]
+featuresWanted.names = gsub('-mean', 'Mean', featuresWanted.names)
+featuresWanted.names = gsub('-std', 'Std', featuresWanted.names)
+featuresWanted.names <- gsub('[-()]', '', featuresWanted.names)
 
 
-#Create new file
-write.table(secTidySet, "secTidySet.txt", row.name=FALSE)
+# Load the datasets
+train <- read.table("./Data/Course3/UCI HAR Dataset/train/X_train.txt")[featuresWanted]
+trainActivities <- read.table("./Data/Course3/UCI HAR Dataset/train/Y_train.txt")
+trainSubjects <- read.table("./Data/Course3/UCI HAR Dataset/train/subject_train.txt")
+train <- cbind(trainSubjects, trainActivities, train)
+
+test <- read.table("./Data/Course3/UCI HAR Dataset/test/X_test.txt")[featuresWanted]
+testActivities <- read.table("./Data/Course3/UCI HAR Dataset/test/Y_test.txt")
+testSubjects <- read.table("./Data/Course3/UCI HAR Dataset/test/subject_test.txt")
+test <- cbind(testSubjects, testActivities, test)
+
+# merge datasets and add labels
+allData <- rbind(train, test)
+colnames(allData) <- c("subject", "activity", featuresWanted.names)
+
+# turn activities & subjects into factors
+allData$activity <- factor(allData$activity, levels = activityLabels[,1], labels = activityLabels[,2])
+allData$subject <- as.factor(allData$subject)
+
+allData.melted <- melt(allData, id = c("subject", "activity"))
+allData.mean <- dcast(allData.melted, subject + activity ~ variable, mean)
+
+write.table(allData.mean, "secTidySet.txt", row.names = FALSE, quote = FALSE)
